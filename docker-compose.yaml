@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  bot:
+    build: .
+    volumes:
+      - ./bot:/usr/src/app:rw
+    restart: unless-stopped
+    environment:
+      - TOKEN=${TOKEN}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - YOUTUBE_CHANNEL_ID=${YOUTUBE_CHANNEL_ID}
+      - DISCORD_CHANNEL_ID=${DISCORD_CHANNEL_ID}
+    command: ["python3", "main.py"]
+    tty: true
