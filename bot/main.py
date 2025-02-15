@@ -47,14 +47,15 @@ async def test(ctx):
 async def on_ready():
     print("F.R.I.D.A.Y. is ready!")
     while True:
-        bufffa_articles=await get_new_articles()
-        if bufffa_articles!="ERROR":
+        buffa_articles=await get_new_articles()
+        if buffa_articles!="ERROR":
             break
+    print(buffa_articles)
     while True:
         new_articles = await get_new_articles()
         if new_articles != "ERROR":
-            await send_new_video(bufffa_articles,new_articles)
-            bufffa_articles=new_articles
+            await send_new_video(buffa_articles,new_articles)
+            buffa_articles=new_articles
             await asyncio.sleep(60)
 
 client.run(TOKEN)
