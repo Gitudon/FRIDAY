@@ -1,3 +1,3 @@
-# J.A.R.V.I.S.
+# F.R.I.D.A.Y.
 
-MARVEL Entertainment の公式チャンネルから最新動画を取得するBot。
+[マーベル公式サイト](https://marvel.disney.co.jp/news)から最新ニュースを取得するBot。

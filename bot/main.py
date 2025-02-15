@@ -24,7 +24,8 @@ async def get_new_articles():
         for target in targets:
             new_articles.append(target.find("a").get("href"))
         return new_articles
-    except:
+    except Exception as e:
+        print(e)
         return "ERROR"
 
 async def send_new_video(buffa_articles,new_articles):
