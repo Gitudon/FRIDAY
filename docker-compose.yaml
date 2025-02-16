@@ -8,5 +8,5 @@ services:
     environment:
       - TOKEN=${TOKEN}
       - DISCORD_CHANNEL_ID=${DISCORD_CHANNEL_ID}
-    command: ["python3", "main.py"]
+    command: ["python3", "friday.py"]
     tty: true
