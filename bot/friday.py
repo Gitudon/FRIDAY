@@ -50,7 +50,6 @@ async def on_ready():
         buffa_articles=await get_new_articles()
         if buffa_articles!="ERROR":
             break
-    print(buffa_articles)
     while True:
         new_articles = await get_new_articles()
         if new_articles != "ERROR":
