@@ -1,8 +1,9 @@
-import discord
-from discord.ext import commands
 import asyncio
 import os
+import time
 import requests
+import discord
+from discord.ext import commands
 from bs4 import BeautifulSoup
 
 TOKEN =  os.getenv("TOKEN")
@@ -17,6 +18,7 @@ target_url="https://marvel.disney.co.jp/news"
 
 async def get_new_articles():
     try:
+        time.sleep(1)
         response = requests.get(target_url)
         soup = BeautifulSoup(response.text, "html.parser")
         targets = soup.find_all("div", class_="text-content")
