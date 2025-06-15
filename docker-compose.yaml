@@ -8,5 +8,9 @@ services:
     environment:
       - TOKEN=${TOKEN}
       - DISCORD_CHANNEL_ID=${DISCORD_CHANNEL_ID}
+      - DB_HOST=${DB_HOST}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
     command: ["python3", "friday.py"]
     tty: true
