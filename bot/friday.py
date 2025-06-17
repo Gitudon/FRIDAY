@@ -50,7 +50,7 @@ async def get_article_title(url):
         return "ERROR"
 
 
-async def send_new_video(new_articles):
+async def send_new_article(new_articles):
     channel = client.get_channel(DISCORD_CHANNEL_ID)
     cursor.execute("SELECT url FROM sent_urls WHERE service = 'FRIDAY'")
     sent_urls = cursor.fetchall()
@@ -86,7 +86,7 @@ async def on_ready():
     while True:
         new_articles = await get_new_articles()
         if new_articles != "ERROR":
-            await send_new_video(new_articles)
+            await send_new_article(new_articles)
             await asyncio.sleep(60)
 
 
