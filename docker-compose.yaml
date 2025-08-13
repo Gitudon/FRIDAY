@@ -7,5 +7,7 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      - TZ=Asia/Tokyo
     command: ["python3", "friday.py"]
     tty: true
