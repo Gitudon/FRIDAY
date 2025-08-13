@@ -5,12 +5,7 @@ services:
     volumes:
       - ./bot:/usr/src/app:rw
     restart: unless-stopped
-    environment:
-      - TOKEN=${TOKEN}
-      - DISCORD_CHANNEL_ID=${DISCORD_CHANNEL_ID}
-      - DB_HOST=${DB_HOST}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
+    env_file:
+      - .env
     command: ["python3", "friday.py"]
     tty: true
