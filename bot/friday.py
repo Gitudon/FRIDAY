@@ -14,13 +14,34 @@ intent.message_content = True
 client = commands.Bot(command_prefix="-", intents=intent)
 target_url = "https://marvel.disney.co.jp/news"
 
-conn = mysql.connector.connect(
-    host=os.getenv("DB_HOST"),
-    username=os.getenv("DB_USERNAME"),
-    password=os.getenv("DB_PASSWORD"),
-    database=os.getenv("DB_NAME"),
-)
-cursor = conn.cursor(buffered=True)
+
+# MySQLの接続設定
+def get_connection():
+    return mysql.connector.connect(
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME"),
+    )
+
+
+async def run_sql(sql: str, params: tuple):
+    conn = get_connection()
+    cursor = conn.cursor(buffered=True)
+    if params != ():
+        cursor.execute(sql, params)
+    else:
+        cursor.execute(sql)
+    if sql.strip().upper().startswith("SELECT"):
+        result = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return result
+    else:
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return
 
 
 async def get_new_articles():
@@ -52,8 +73,10 @@ async def get_article_title(url):
 
 async def send_new_article(new_articles):
     channel = client.get_channel(DISCORD_CHANNEL_ID)
-    cursor.execute("SELECT url FROM sent_urls WHERE service = 'FRIDAY'")
-    sent_urls = cursor.fetchall()
+    sent_urls = await run_sql(
+        "SELECT url FROM sent_urls WHERE service = 'FRIDAY'",
+        (),
+    )
     for i in range(len(sent_urls)):
         if type(sent_urls[i]) is tuple:
             sent_urls[i] = sent_urls[i][0]
@@ -64,14 +87,10 @@ async def send_new_article(new_articles):
                 title = await get_article_title(article)
                 if title != "ERROR":
                     break
-            query = """
-            INSERT INTO sent_urls (url, title, category, service) VALUES (%s,  %s, %s, %s)
-            """
-            cursor.execute(
-                query,
+            await run_sql(
+                "INSERT INTO sent_urls (url, title, category, service) VALUES (%s,  %s, %s, %s)",
                 (article, title, "new_article", "FRIDAY"),
             )
-            conn.commit()
 
 
 @client.command()
