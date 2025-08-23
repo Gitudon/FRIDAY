@@ -103,10 +103,13 @@ async def test(ctx):
 async def on_ready():
     print("F.R.I.D.A.Y. is ready!")
     while True:
-        new_articles = await get_new_articles()
-        if new_articles != "ERROR":
-            await send_new_article(new_articles)
-            await asyncio.sleep(60)
+        try:
+            new_articles = await get_new_articles()
+            if new_articles != "ERROR":
+                await send_new_article(new_articles)
+        except Exception as e:
+            print(f"Error: {e}")
+        await asyncio.sleep(60)
 
 
 client.run(TOKEN)
