@@ -1,6 +1,7 @@
 import asyncio
 import os
 import time
+import traceback
 import requests
 import discord
 from discord.ext import commands
@@ -109,6 +110,7 @@ async def on_ready():
                 await send_new_article(new_articles)
         except Exception as e:
             print(f"Error: {e}")
+            traceback.print_exc()
         await asyncio.sleep(60)
 
 
