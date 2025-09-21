@@ -14,6 +14,7 @@ intent = discord.Intents.default()
 intent.message_content = True
 client = commands.Bot(command_prefix="-", intents=intent)
 target_url = "https://marvel.disney.co.jp/news"
+task = None
 
 
 # MySQLの接続設定
@@ -94,15 +95,7 @@ async def send_new_article(new_articles):
             )
 
 
-@client.command()
-async def test(ctx):
-    if ctx.channel.id == DISCORD_CHANNEL_ID:
-        await ctx.send("F.R.I.D.A.Y. is working!")
-
-
-@client.event
-async def on_ready():
-    print("F.R.I.D.A.Y. is ready!")
+async def main():
     while True:
         try:
             new_articles = await get_new_articles()
@@ -112,6 +105,20 @@ async def on_ready():
             print(f"Error: {e}")
             traceback.print_exc()
         await asyncio.sleep(60)
+
+
+@client.command()
+async def test(ctx):
+    if ctx.channel.id == DISCORD_CHANNEL_ID:
+        await ctx.send("F.R.I.D.A.Y. is working!")
+
+
+@client.event
+async def on_ready():
+    global task
+    print("F.R.I.D.A.Y. is ready!")
+    if task is None or task.done():
+        task = asyncio.create_task(main())
 
 
 client.run(TOKEN)
