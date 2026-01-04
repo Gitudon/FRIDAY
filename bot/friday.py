@@ -41,7 +41,7 @@ class UseMySQL:
             cls.pool = None
 
     @classmethod
-    async def run_sql(cls, sql: str, params: tuple = ()) -> list:
+    async def run_sql(cls, sql: str, params: tuple = ()) -> list | None:
         async with cls.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(sql, params)
@@ -103,7 +103,7 @@ class Crawler:
     @classmethod
     async def get_article_title(cls, url) -> str:
         try:
-            soup = await cls.try_to_get_soup(target_url)
+            soup = await cls.try_to_get_soup(url)
             if soup == "FAILED":
                 return "ERROR"
             title = soup.find("title").text.strip()
