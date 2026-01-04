@@ -42,7 +42,7 @@ class UseMySQL:
             cls.pool = None
 
     @classmethod
-    async def run_sql(cls, sql: str, params: tuple = ()):
+    async def run_sql(cls, sql: str, params: tuple = ()) -> list:
         async with cls.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(sql, params)
@@ -157,8 +157,8 @@ async def test(ctx):
 @client.event
 async def on_ready():
     global task
-    await Crawler.init_session()
     await UseMySQL.init_pool()
+    await Crawler.init_session()
     print("F.R.I.D.A.Y. is ready!")
     if task is None or task.done():
         task = asyncio.create_task(main())
