@@ -101,7 +101,7 @@ class Crawler:
             return "ERROR"
 
     @classmethod
-    async def get_article_title(cls, url) -> str:
+    async def get_article_title(cls, url: str) -> str:
         try:
             soup = await cls.try_to_get_soup(url)
             if soup == "FAILED":
@@ -113,7 +113,7 @@ class Crawler:
             return "ERROR"
 
 
-async def send_new_article(new_articles):
+async def send_new_article(new_articles: list):
     channel = client.get_channel(DISCORD_CHANNEL_ID)
     sent_urls = await UseMySQL.run_sql(
         "SELECT url FROM sent_urls WHERE service = 'FRIDAY'",
@@ -148,7 +148,7 @@ async def main():
 
 
 @client.command()
-async def test(ctx):
+async def test(ctx: commands.Context):
     if ctx.channel.id == DISCORD_CHANNEL_ID:
         await ctx.send("F.R.I.D.A.Y. is working!")
 
