@@ -1,12 +1,12 @@
-import asyncio
 import os
 import time
+import asyncio
 import traceback
-import requests
 import discord
 from discord.ext import commands
+import aiohttp
 from bs4 import BeautifulSoup
-import mysql.connector
+import aiomysql
 
 TOKEN = os.getenv("TOKEN")
 DISCORD_CHANNEL_ID = int(os.environ.get("DISCORD_CHANNEL_ID"))
@@ -18,64 +18,105 @@ task = None
 
 
 # MySQLの接続設定
-def get_connection():
-    return mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME"),
-    )
+class UseMySQL:
+    pool: aiomysql.Pool | None = None
+
+    @classmethod
+    async def init_pool(cls):
+        if cls.pool is None:
+            cls.pool = await aiomysql.create_pool(
+                host=os.getenv("DB_HOST"),
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASSWORD"),
+                db=os.getenv("DB_NAME"),
+                autocommit=True,
+                minsize=1,
+                maxsize=5,
+            )
+
+    @classmethod
+    async def close_pool(cls):
+        if cls.pool:
+            cls.pool.close()
+            await cls.pool.wait_closed()
+            cls.pool = None
+
+    @classmethod
+    async def run_sql(cls, sql: str, params: tuple = ()):
+        async with cls.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(sql, params)
+                if sql.strip().upper().startswith("SELECT"):
+                    rows = await cur.fetchall()
+                    return [r[0] if isinstance(r, tuple) else r for r in rows]
 
 
-async def run_sql(sql: str, params: tuple):
-    conn = get_connection()
-    cursor = conn.cursor(buffered=True)
-    if params != ():
-        cursor.execute(sql, params)
-    else:
-        cursor.execute(sql)
-    if sql.strip().upper().startswith("SELECT"):
-        result = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        return result
-    else:
-        conn.commit()
-        cursor.close()
-        conn.close()
-        return
+class Crawler:
+    session: aiohttp.ClientSession | None = None
 
+    @classmethod
+    async def init_session(cls):
+        if cls.session is None:
+            timeout = aiohttp.ClientTimeout(total=30)
+            cls.session = aiohttp.ClientSession(timeout=timeout)
 
-async def get_new_articles():
-    try:
-        time.sleep(1)
-        response = requests.get(target_url)
-        soup = BeautifulSoup(response.text, "html.parser")
-        targets = soup.find_all("div", class_="text-content")
-        new_articles = []
-        for target in targets:
-            new_articles.append(target.find("a").get("href"))
-        return new_articles
-    except Exception as e:
-        print(e)
-        return "ERROR"
+    @classmethod
+    async def close_session(cls):
+        if cls.session:
+            await cls.session.close()
+            cls.session = None
 
+    @classmethod
+    async def get_soup(cls, url: str) -> BeautifulSoup | str:
+        try:
+            await asyncio.sleep(1)
+            async with cls.session.get(url) as resp:
+                if resp.status != 200:
+                    return "ERROR"
+                text = await resp.text()
+                return BeautifulSoup(text, "html.parser")
+        except Exception:
+            return "ERROR"
 
-async def get_article_title(url):
-    try:
-        time.sleep(1)
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, "html.parser")
-        title = soup.find("title").text.strip()
-        return title
-    except Exception as e:
-        print(e)
-        return "ERROR"
+    @classmethod
+    async def try_to_get_soup(cls, url: str, retries: int = 5) -> BeautifulSoup | str:
+        for _ in range(retries):
+            soup = await cls.get_soup(url)
+            if soup != "ERROR":
+                return soup
+        return "FAILED"
+
+    @classmethod
+    async def get_new_articles(cls) -> list | str:
+        try:
+            soup = await cls.try_to_get_soup(target_url)
+            if soup == "FAILED":
+                return "ERROR"
+            targets = soup.find_all("div", class_="text-content")
+            new_articles = []
+            for target in targets:
+                new_articles.append(target.find("a").get("href"))
+            return new_articles
+        except Exception as e:
+            print(e)
+            return "ERROR"
+
+    @classmethod
+    async def get_article_title(cls, url) -> str:
+        try:
+            soup = await cls.try_to_get_soup(target_url)
+            if soup == "FAILED":
+                return "ERROR"
+            title = soup.find("title").text.strip()
+            return title
+        except Exception as e:
+            print(e)
+            return "ERROR"
 
 
 async def send_new_article(new_articles):
     channel = client.get_channel(DISCORD_CHANNEL_ID)
-    sent_urls = await run_sql(
+    sent_urls = await UseMySQL.run_sql(
         "SELECT url FROM sent_urls WHERE service = 'FRIDAY'",
         (),
     )
@@ -86,10 +127,10 @@ async def send_new_article(new_articles):
         if article not in sent_urls:
             await channel.send(article)
             while True:
-                title = await get_article_title(article)
+                title = await Crawler.get_article_title(article)
                 if title != "ERROR":
                     break
-            await run_sql(
+            await UseMySQL.run_sql(
                 "INSERT INTO sent_urls (url, title, category, service) VALUES (%s,  %s, %s, %s)",
                 (article, title, "new_article", "FRIDAY"),
             )
@@ -98,7 +139,7 @@ async def send_new_article(new_articles):
 async def main():
     while True:
         try:
-            new_articles = await get_new_articles()
+            new_articles = await Crawler.get_new_articles()
             if new_articles != "ERROR":
                 await send_new_article(new_articles)
         except Exception as e:
@@ -116,6 +157,8 @@ async def test(ctx):
 @client.event
 async def on_ready():
     global task
+    await Crawler.init_session()
+    await UseMySQL.init_pool()
     print("F.R.I.D.A.Y. is ready!")
     if task is None or task.done():
         task = asyncio.create_task(main())
