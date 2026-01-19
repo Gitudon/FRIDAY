@@ -116,11 +116,14 @@ class Crawler:
 async def send_new_article(new_articles: list):
     channel = client.get_channel(DISCORD_CHANNEL_ID)
     for article in new_articles:
-        sent_urls = await UseMySQL.run_sql(
-            "SELECT url FROM sent_urls WHERE service = 'FRIDAY' AND url = %s",
-            (article,),
+        sent = (
+            await UseMySQL.run_sql(
+                "SELECT url FROM sent_urls WHERE service = 'FRIDAY' AND url = %s",
+                (article,),
+            )
+            != []
         )
-        if not sent_urls:
+        if not sent:
             await channel.send(article)
             while True:
                 title = await Crawler.get_article_title(article)
