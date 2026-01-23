@@ -123,16 +123,17 @@ async def send_new_article(new_articles: list):
             )
             != []
         )
-        if not sent:
-            await channel.send(article)
-            while True:
-                title = await Crawler.get_article_title(article)
-                if title != "ERROR":
-                    break
-            await UseMySQL.run_sql(
-                "INSERT INTO sent_urls (url, title, category, service) VALUES (%s,  %s, %s, %s)",
-                (article, title, "new_article", "FRIDAY"),
-            )
+        if sent:
+            continue
+        await channel.send(article)
+        while True:
+            title = await Crawler.get_article_title(article)
+            if title != "ERROR":
+                break
+        await UseMySQL.run_sql(
+            "INSERT INTO sent_urls (url, title, category, service) VALUES (%s,  %s, %s, %s)",
+            (article, title, "new_article", "FRIDAY"),
+        )
 
 
 async def main():
