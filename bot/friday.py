@@ -7,12 +7,13 @@ import aiohttp
 from bs4 import BeautifulSoup
 import aiomysql
 
+SERVICE_NAME = "FRIDAY"
 TOKEN = os.getenv("TOKEN")
 DISCORD_CHANNEL_ID = int(os.environ.get("DISCORD_CHANNEL_ID"))
+TARGET_URL = "https://marvel.disney.co.jp/news"
 intent = discord.Intents.default()
 intent.message_content = True
 client = commands.Bot(command_prefix="-", intents=intent)
-target_url = "https://marvel.disney.co.jp/news"
 task = None
 
 
@@ -85,12 +86,20 @@ class Crawler:
                 return soup
         return "FAILED"
 
+    @staticmethod
+    async def register_crawl(target_url: str, method: str):
+        await UseMySQL.run_sql(
+            "INSERT INTO crawls (target_url, method, service) VALUES (%s, %s, %s)",
+            (target_url, method, SERVICE_NAME),
+        )
+
     @classmethod
     async def get_new_articles(cls) -> list | str:
         try:
-            soup = await cls.try_to_get_soup(target_url)
+            soup = await cls.try_to_get_soup(TARGET_URL)
             if soup == "FAILED":
                 return "ERROR"
+            await cls.register_crawl(TARGET_URL, "HTTP_GET")
             targets = soup.find_all("div", class_="text-content")
             new_articles = []
             for target in targets:
@@ -106,6 +115,7 @@ class Crawler:
             soup = await cls.try_to_get_soup(url)
             if soup == "FAILED":
                 return "ERROR"
+            await cls.register_crawl(url, "HTTP_GET")
             title = soup.find("title").text.strip()
             return title
         except Exception as e:
@@ -118,8 +128,8 @@ async def send_new_article(new_articles: list):
     for article in new_articles:
         sent = (
             await UseMySQL.run_sql(
-                "SELECT url FROM sent_urls WHERE service = 'FRIDAY' AND url = %s",
-                (article,),
+                "SELECT url FROM sent_urls WHERE service = %s AND url = %s",
+                (SERVICE_NAME, article),
             )
             != []
         )
@@ -132,7 +142,7 @@ async def send_new_article(new_articles: list):
                 break
         await UseMySQL.run_sql(
             "INSERT INTO sent_urls (url, title, category, service) VALUES (%s,  %s, %s, %s)",
-            (article, title, "new_article", "FRIDAY"),
+            (article, title, "new_article", SERVICE_NAME),
         )
 
 
