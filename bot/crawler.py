@@ -54,7 +54,9 @@ class Crawler:
             targets = soup.find_all("div", class_="text-content")
             new_articles = []
             for target in targets:
-                new_articles.append(target.find("a").get("href"))
+                url = target.find("a").get("href")
+                if url:
+                    new_articles.append(target.find("a").get("href"))
             return new_articles
         except Exception as e:
             print(e)
