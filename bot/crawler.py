@@ -59,7 +59,7 @@ class Crawler:
                     new_articles.append(target.find("a").get("href"))
             return new_articles
         except Exception as e:
-            print(e)
+            await write_log_message(f"{e}", "ERROR")
             return "ERROR"
 
     @classmethod
@@ -72,5 +72,5 @@ class Crawler:
             title = soup.find("title").text.strip()
             return title
         except Exception as e:
-            print(e)
+            await write_log_message(f"{e}", "ERROR")
             return "ERROR"

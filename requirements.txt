@@ -1,6 +1,8 @@
-py-cord
-discord.py
-beautifulsoup4
 aiohttp
 aiomysql
+beautifulsoup4
 cryptography
+davey
+discord.py
+py-cord
+pynacl
