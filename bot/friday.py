@@ -12,13 +12,6 @@ class FRIDAY:
     @staticmethod
     async def send_new_article(new_articles: list):
         channel = client.get_channel(DISCORD_CHANNEL_ID)
-        service_id = await UseMySQL.run_sql(
-            "SELECT id FROM services WHERE name = %s", (SERVICE_NAME,)
-        )
-        if service_id != []:
-            service_id = service_id[0][0]
-        else:
-            return
         category = "new_article"
         category_id = await UseMySQL.run_sql(
             "SELECT id FROM categories WHERE name = %s",
@@ -26,6 +19,13 @@ class FRIDAY:
         )
         if category_id != []:
             category_id = category_id[0][0]
+        else:
+            return
+        service_id = await UseMySQL.run_sql(
+            "SELECT id FROM services WHERE name = %s", (SERVICE_NAME,)
+        )
+        if service_id != []:
+            service_id = service_id[0][0]
         else:
             return
         for article in new_articles:
