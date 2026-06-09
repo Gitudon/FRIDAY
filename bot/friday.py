@@ -15,17 +15,17 @@ class FRIDAY:
         category = "new_article"
         category_id = await UseMySQL.run_sql(
             "SELECT id FROM categories WHERE name = %s",
-            (service_id, category),
+            (category),
         )
         if category_id != []:
-            category_id = category_id[0][0]
+            category_id = category_id[0]
         else:
             return
         service_id = await UseMySQL.run_sql(
             "SELECT id FROM services WHERE name = %s", (SERVICE_NAME,)
         )
         if service_id != []:
-            service_id = service_id[0][0]
+            service_id = service_id[0]
         else:
             return
         for article in new_articles:
