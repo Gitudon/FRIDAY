@@ -12,11 +12,27 @@ class FRIDAY:
     @staticmethod
     async def send_new_article(new_articles: list):
         channel = client.get_channel(DISCORD_CHANNEL_ID)
+        service_id = await UseMySQL.run_sql(
+            "SELECT id FROM services WHERE name = %s", (SERVICE_NAME,)
+        )
+        if service_id != []:
+            service_id = service_id[0][0]
+        else:
+            return
+        category = "new_article"
+        category_id = await UseMySQL.run_sql(
+            "SELECT id FROM categories WHERE name = %s",
+            (service_id, category),
+        )
+        if category_id != []:
+            category_id = category_id[0][0]
+        else:
+            return
         for article in new_articles:
             sent = (
                 await UseMySQL.run_sql(
-                    "SELECT url FROM sent_urls WHERE service = %s AND url = %s",
-                    (SERVICE_NAME, article),
+                    "SELECT url FROM sent_urls WHERE service_id = %s AND url = %s",
+                    (service_id, article),
                 )
                 != []
             )
@@ -28,8 +44,8 @@ class FRIDAY:
                 if title != "ERROR":
                     break
             await UseMySQL.run_sql(
-                "INSERT INTO sent_urls (url, title, category, service) VALUES (%s,  %s, %s, %s)",
-                (article, title, "new_article", SERVICE_NAME),
+                "INSERT INTO sent_urls (url, title, category_id, service_id) VALUES (%s,  %s, %s, %s)",
+                (article, title, category_id, service_id),
             )
 
 
